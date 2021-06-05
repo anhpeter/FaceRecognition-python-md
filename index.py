@@ -1,6 +1,6 @@
 import tkinter
 from warnings import showwarning
-import FaceRecog
+import algorithm
 
 # interface
 import PIL.Image
@@ -11,11 +11,12 @@ from tkinter import messagebox
 
 appTitle = "Face Recognition"
 primaryColor = "#293955"
-secondaryColor = "#dddddd"
+secondaryColor = "white"
 imgWidth = 250
 imgHeight = 250
 imageYOffset = 150
 noImageSrc = "./assets/images/no_image.png"
+notFoundImageSrc = "./assets/images/not_found.png"
 inputImageSrc = ""
 
 
@@ -102,14 +103,20 @@ loadButton.place(width=350, x=260, y=500)
 def testImageHandler():
     if inputImageSrc.strip() != "":
         # find person
-        personFound, personName = FaceRecog.findPerson(inputImageSrc)
+        personFound, personName = algorithm.findPerson(inputImageSrc)
 
-        # update output image
-        outputImage.changeImageBySrc(personFound)
+        if personFound != None:
+            # update output image
+            outputImage.changeImageBySrc(personFound)
 
-        # change output label
-        lblContent = "Name: "+personName
-        outputLabel.config(text=lblContent)
+            # change output label
+            lblContent = "Name: "+personName.capitalize()
+            outputLabel.config(text=lblContent, foreground=secondaryColor)
+        else: 
+            lblContent = "Not found!"
+            outputLabel.config(text=lblContent, foreground="#E16B5A")
+            outputImage.changeImageBySrc(notFoundImageSrc)
+
     else:
         messagebox.showwarning(title="Warning!", message="Please load input image!")
 
