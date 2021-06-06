@@ -1,21 +1,25 @@
+import os
 import cv2
+from functools import cmp_to_key
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-import os
-from skimage.transform import rescale
 from skimage.transform import resize
 
-# from tkinter import filedialog
-# from tkinter import *
+# SUPPORT FUNCTIONS
+# create sort key
+def number_cmp(a, b):
+    try:
+        aNumber = int(a[: a.index(".")])
+        bNumber = int(b[: b.index(".")])
+        return aNumber - bNumber
+    except:
+        return 0
 
-def getFullFilePath(filePath):
-    for ext in imgExtension:
-        path = filePath +"." + ext
-        if os.path.isfile(path):
-            return path
-    return None
+
+number_cmp_key = cmp_to_key(number_cmp)
+
 
 def showImages(imgList):
     if len(imgList) > 0:
@@ -25,68 +29,73 @@ def showImages(imgList):
         plt.show()
 
 
-# Downsampled, concatenation, normalized image
-o = 1
+# INITIATE VALUES
+trainingThreshold = 5
+imgExtension = ["pgm", "jpg", "png"]
 
-def preprocessimg(imgGray):
-    # Downsampled
+faceDatasetDir = 'FaceDataset/'
+entries = os.listdir(faceDatasetDir)
+hatList = []
+labelList = []
+
+# Downsampled, concatenation, normalized image
+def preprocessing(imgGray):
     # Resize image
     imgResize = resize(imgGray, (50, 50))
+
     # Flatten the image
     imgRavel = np.ravel(imgResize)
 
     # Reshape to column vector
     imgVector = imgRavel.reshape(-1, 1)
+
     # Convert image to DataFrame
     imgDataFrame = DataFrame(imgVector)
+
     # Normalized image
     imgNormalized = (imgDataFrame - imgDataFrame.min()) / (
         imgDataFrame.max() - imgDataFrame.min()
     )
     return imgNormalized
 
-
-trainingThreshold = 5
-imgExtension = ["pgm", "jpg", "png"]
-# Read images in folder dataset
-entries = os.listdir("FaceDataset/")
-hatList = []
-labelList = []
 # Training part
 def train():
-    print("Processing...")
+    print("Traning ...")
     for entry in entries:
-        personDir = "FaceDataset/" + entry
+        personDir = faceDatasetDir + entry
         imgFilenameList = os.listdir(personDir)
+        imgFilenameList.sort(key=number_cmp_key)
         imgGallery = []
-        # Iterative through gallery image of this person folder
-        for imgFilename in imgFilenameList:
-            imgDir = personDir + "/" + imgFilename
 
-            # Train only first (trainingThreshold - 1) images
-            if imgFilename[: imgFilename.index(".")] == str(trainingThreshold):
-                break
+        # Preprocess person's images
+        for imgFilename in imgFilenameList[:trainingThreshold]:
+            imgDir = personDir + "/" + imgFilename
 
             # Read image
             img = cv2.imread(imgDir)
+
             # Convert to gray image
             imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
             # Append to the image gallery dataframe
-            imgPreProcessed = preprocessimg(imgGray)
+            imgPreProcessed = preprocessing(imgGray)
             imgGallery = pd.concat([imgPreProcessed, imgPreProcessed], axis=1)
 
         # Convert dataframe to array
         imgGalleryArray = imgGallery.to_numpy()
+
         # Transpose of the image gallery array
         imgGalleryArrayTranspose = imgGalleryArray.T
+
         # Calculation
         subCalculate = np.dot(imgGalleryArrayTranspose, imgGalleryArray)
         subCalculate2 = np.dot(imgGalleryArray, np.linalg.pinv(subCalculate))
         hatMatrix = np.dot(subCalculate2, imgGalleryArrayTranspose)
         hatList.append(hatMatrix)
         labelList.append(entry)
-    print("done processing!")
+    print("done training!")
 
+# Find person by test image src
 def findPerson(src):
     # Read input image
     imgInput = cv2.imread(src)
@@ -95,7 +104,7 @@ def findPerson(src):
     imgInputGray = cv2.cvtColor(imgInput, cv2.COLOR_BGR2GRAY)
 
     # Pre-process input image
-    imgInputPreProcessed = preprocessimg(imgInputGray).to_numpy()
+    imgInputPreProcessed = preprocessing(imgInputGray).to_numpy()
     distanceList = []
 
     # create distance list
@@ -116,12 +125,16 @@ def findPerson(src):
         personNameFound = labelList[imgFoundIndex]
 
         # Show result
-        print("Match person: " + personNameFound)
-        imgFoundPath = "FaceDataset/" + personNameFound + "/1"
-        fullFilePath = getFullFilePath(imgFoundPath)
+        #print("Match person: " + personNameFound)
+        imgFoundDirPath = faceDatasetDir + personNameFound
+
+        # get first found person's image
+        imgFoundFilename = os.listdir(imgFoundDirPath)[0]
+        fullFilePath = imgFoundDirPath + "/" + imgFoundFilename
         return fullFilePath, personNameFound
     else:
         return None, None
+
 
 # train
 train()
