@@ -37,6 +37,7 @@ faceDatasetDir = 'FaceDataset/'
 entries = os.listdir(faceDatasetDir)
 hatList = []
 labelList = []
+arrImgPre = []
 
 # Downsampled, concatenation, normalized image
 def preprocessing(imgGray):
@@ -79,20 +80,21 @@ def train():
 
             # Append to the image gallery dataframe
             imgPreProcessed = preprocessing(imgGray)
-            imgGallery = pd.concat([imgPreProcessed, imgPreProcessed], axis=1)
+            arrImgPre.append(imgPreProcessed)
+        
 
-        # Convert dataframe to array
-        imgGalleryArray = imgGallery.to_numpy()
-
-        # Transpose of the image gallery array
-        imgGalleryArrayTranspose = imgGalleryArray.T
-
-        # Calculation
-        subCalculate = np.dot(imgGalleryArrayTranspose, imgGalleryArray)
-        subCalculate2 = np.dot(imgGalleryArray, np.linalg.pinv(subCalculate))
-        hatMatrix = np.dot(subCalculate2, imgGalleryArrayTranspose)
-        hatList.append(hatMatrix)
-        labelList.append(entry)
+        for img in arrImgPre:
+            # Convert dataframe to array
+            imgGalleryArray = img.to_numpy()
+        
+            # Transpose of the image gallery array
+            imgGalleryArrayTranspose = imgGalleryArray.T
+            # Calculation
+            subCalculate = np.dot(imgGalleryArrayTranspose, imgGalleryArray)
+            subCalculate2 = np.dot(imgGalleryArray, np.linalg.pinv(subCalculate))
+            hatMatrix = np.dot(subCalculate2, imgGalleryArrayTranspose)
+            hatList.append(hatMatrix)
+            labelList.append(entry)
     print("Done training!")
 
 # Find person by test image src
