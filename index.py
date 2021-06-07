@@ -9,6 +9,9 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 
+# train
+algorithm.train()
+
 appTitle = "Face Recognition"
 primaryColor = "#293955"
 secondaryColor = "white"
@@ -102,6 +105,7 @@ loadButton.place(width=350, x=260, y=500)
 
 def testImageHandler():
     if inputImageSrc.strip() != "":
+        outputLabel.config(text="Loading...", foreground=secondaryColor)
         # find person
         personFound, personName = algorithm.findPerson(inputImageSrc)
 

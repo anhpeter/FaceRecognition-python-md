@@ -93,7 +93,7 @@ def train():
         hatMatrix = np.dot(subCalculate2, imgGalleryArrayTranspose)
         hatList.append(hatMatrix)
         labelList.append(entry)
-    print("done training!")
+    print("Done training!")
 
 # Find person by test image src
 def findPerson(src):
@@ -136,5 +136,3 @@ def findPerson(src):
         return None, None
 
 
-# train
-train()
