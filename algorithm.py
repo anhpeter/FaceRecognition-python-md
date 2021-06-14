@@ -66,7 +66,6 @@ def train():
         personDir = faceDatasetDir + entry
         imgFilenameList = os.listdir(personDir)
         imgFilenameList.sort(key=number_cmp_key)
-        imgGallery = []
 
         # Preprocess person's images
         for imgFilename in imgFilenameList[:trainingThreshold]:
